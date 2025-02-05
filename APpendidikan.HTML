@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator DOCX</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.1.0/docx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        label, input, select, textarea { display: block; margin-bottom: 10px; width: 100%; }
+        button { background: gold; padding: 10px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Generator File DOCX Berbasis AI</h2>
+    <label for="subjek">Subjek</label>
+    <input type="text" id="subjek" placeholder="Masukkan subjek">
+    
+    <label for="tingkat">Tingkat</label>
+    <select id="tingkat">
+        <option value="">Pilih tingkat kelas</option>
+        <option value="SD">SD</option>
+        <option value="SMP">SMP</option>
+        <option value="SMA">SMA</option>
+    </select>
+    
+    <label for="konteks">Konteks</label>
+    <textarea id="konteks" placeholder="Masukkan konteks..."></textarea>
+    
+    <label for="pertanyaan">Pertanyaan</label>
+    <textarea id="pertanyaan" placeholder="Masukkan pertanyaan, pisahkan dengan garis baru..."></textarea>
+    
+    <button onclick="generateDoc()">Hasilkan</button>
+    
+    <script>
+        function generateLearningObjectives(subject) {
+            let objectives = {
+                "Matematika": [
+                    "Siswa memahami konsep dasar bilangan.",
+                    "Siswa dapat menyelesaikan operasi matematika sederhana."
+                ],
+                "Ilmu Pengetahuan Alam": [
+                    "Siswa mengenali fenomena alam di sekitar mereka.",
+                    "Siswa dapat menjelaskan siklus air."
+                ],
+                "Berpikir Komputasional": [
+                    "Siswa memahami konsep dekomposisi masalah.",
+                    "Siswa dapat membuat algoritma sederhana."
+                ]
+            };
+            return objectives[subject] || [
+                "Siswa memahami dasar-dasar " + subject + ".",
+                "Siswa dapat mengaplikasikan " + subject + " dalam kehidupan sehari-hari."
+            ];
+        }
+        
+        function generateDoc() {
+            const { Document, Packer, Paragraph, TextRun } = docx;
+            
+            let subjek = document.getElementById("subjek").value || "Tanpa subjek";
+            let tingkat = document.getElementById("tingkat").value || "Tidak ditentukan";
+            let konteks = document.getElementById("konteks").value || "Tidak ada konteks tambahan.";
+            let pertanyaanText = document.getElementById("pertanyaan").value.trim();
+            
+            let pertanyaanList = pertanyaanText ? pertanyaanText.split('\n') : ["Tidak ada pertanyaan yang dimasukkan."];
+            let tujuanPembelajaran = generateLearningObjectives(subjek);
+            
+            let docChildren = [
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Rangkaian Pembelajaran: " + subjek, bold: true, size: 32 }),
+                    ],
+                }),
+                new Paragraph(""),
+                new Paragraph("Tingkat: " + tingkat),
+                new Paragraph("Konteks: " + konteks),
+                new Paragraph(""),
+                new Paragraph({ children: [new TextRun({ text: "Tujuan Pembelajaran:", bold: true })] }),
+            ];
+            
+            tujuanPembelajaran.forEach((tujuan) => {
+                docChildren.push(new Paragraph("- " + tujuan));
+            });
+            
+            docChildren.push(new Paragraph(""));
+            docChildren.push(new Paragraph({ children: [new TextRun({ text: "Aktivitas Pembelajaran:", bold: true })] }));
+            docChildren.push(new Paragraph("- Diskusi kelas tentang " + subjek + "."));
+            docChildren.push(new Paragraph("- Latihan individu dan kelompok."));
+            docChildren.push(new Paragraph("- Simulasi dan eksperimen sederhana."));
+            docChildren.push(new Paragraph(""));
+            docChildren.push(new Paragraph({ children: [new TextRun({ text: "Latihan:", bold: true })] }));
+            
+            pertanyaanList.forEach((pertanyaan, index) => {
+                docChildren.push(new Paragraph("Pertanyaan " + (index + 1) + ": " + pertanyaan));
+                docChildren.push(new Paragraph(""));
+            });
+            
+            const doc = new Document({ sections: [{ properties: {}, children: docChildren }] });
+            
+            Packer.toBlob(doc).then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "Rangkaian_Pembelajaran_" + subjek.replace(/\s+/g, "_") + ".docx";
+                a.click();
+            });
+        }
+    </script>
+</body>
+</html>
